@@ -35,6 +35,7 @@ var HEIGHT = 400;
 d3.selectAll('body svg').remove();
 var svg = d3.select('body').append('svg:svg');
 var svg2 = d3.select('body').append('svg:svg');
+var svg3 = d3.select('body').append('svg:svg');
 var focus_svg = d3.select('body').append('svg:svg').attr('class', 'focus');
 
 focus = Figure();
