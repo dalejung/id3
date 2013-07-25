@@ -70,7 +70,7 @@ fig.default_layout();
 fig2 = Figure();
 fig2
   .margin({'left':40})
-  .width(WIDTH)
+  .width(400)
   .height(300)
   .index(df.index);
 fig2(svg2);
