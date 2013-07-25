@@ -1,4 +1,6 @@
 {
   "name" : "id3", 
-  "main" : "index.js"
+  "main" : "lib/id3.js",
+  "browser" : {
+  }
 }
