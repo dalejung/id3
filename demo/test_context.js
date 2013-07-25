@@ -82,5 +82,19 @@ fig2.grid();
 fig2.axes();
 fig2.layer(view, 'line');
 
+fig3 = Figure();
+fig3
+  .margin({'left':40})
+  .width(3000)
+  .height(100)
+  .index(df.index);
+fig3(svg3);
+
+view = View();
+view.layer(line);
+fig3.x.attach(brush);
+fig3.grid();
+fig3.axes();
+fig3.layer(view, 'line');
 
 module.exports = null;
