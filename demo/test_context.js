@@ -6,7 +6,6 @@ var id3 = require('id3');
 var Line = id3.Line;
 var Figure = id3.Figure;
 var Candlestick = id3.Candlestick;
-var View = require('id3/lib/view.js');
 
 // data
 var content = fs.readFileSync('df.json');
@@ -58,8 +57,6 @@ fig(svg);
 
 fig.x.attach(brush);
 
-view = View();
-view.layer(line);
 fig.layer(line, 'line');
 fig.layer(line2, 'line2');
 fig.layer(candle, 'candle');
@@ -77,24 +74,22 @@ fig2
   .index(df.index);
 fig2(svg2);
 
-view = View();
-view.layer(line);
 fig2.x.attach(brush);
 fig2.grid();
 fig2.axes();
-fig2.layer(view, 'line');
+fig2.layer(line, 'line');
 
 fig3 = Figure();
 fig3
   .margin({'left':40})
-  .width(3000)
+  .width(1300)
   .height(100)
   .index(df.index);
 fig3(svg3);
 
-view = View();
-view.layer(line);
 fig3.x.attach(brush);
 fig3.grid();
 fig3.axes();
-fig3.layer(view, 'line');
+fig3.layer(line, 'line');
+
+module.exports = null;
