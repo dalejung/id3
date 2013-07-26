@@ -3,7 +3,7 @@ id3
 
 interactive d3
 
-[Demo](http://bl.ocks.org/dalejung/raw/6077321/)
+[Demo](https://rawgithub.com/dalejung/id3/master/demo/context.html)
 
 ```javascript
 var svg = d3.select('body').append('svg:svg');
