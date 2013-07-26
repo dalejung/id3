@@ -1,4 +1,56 @@
-require=(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
+require=(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({"WNltxV":[function(require,module,exports){
+var fs = require('dfs');
+var _ = require('underscore');
+
+// data
+var content = fs.readFileSync('df.json');
+var df = JSON.parse(content);
+
+var length = df.index.length;
+var overnight = new Array(length); 
+var open = df.open;
+var close = df.close;
+var high = df.high;
+for (var i=0; i < length; i++) {
+  overnight[i] = open[i] / close[i-1] - 1;
+}
+df.overnight = overnight;
+
+var gap_up = new Array(length);
+for (var i=0; i < length; i++) {
+  gap_up[i] = open[i] > high[i-1];
+}
+df.gap_up = gap_up;
+
+_.each(df, function(arr, key) {
+  if (!_.isArray(arr)) {
+    return;
+  }
+  df[key] = _.last(arr, 1500);
+});
+
+
+yvalues = open;
+
+var xdata = new Array(length);
+var ydata = new Array(length);
+var j=0;
+for (var i=0; i < length; i++) {
+  if(gap_up[i]) {
+    xdata[j] = i;
+    ydata[j] = yvalues[i];
+    j++;
+  }
+}
+
+ydata = ydata.slice(0, j);
+xdata = xdata.slice(0, j);
+
+df.gaps = {'x':xdata, 'y':ydata}
+
+module.exports = df;
+
+},{"dfs":"wB6XlX","underscore":"SpOItP"}],2:[function(require,module,exports){
 (function(){// UTILITY
 var util = require('util');
 var Buffer = require("buffer").Buffer;
@@ -315,7 +367,7 @@ assert.doesNotThrow = function(block, /*optional*/error, /*optional*/message) {
 assert.ifError = function(err) { if (err) {throw err;}};
 
 })()
-},{"buffer":6,"util":4}],2:[function(require,module,exports){
+},{"buffer":7,"util":5}],3:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -501,7 +553,7 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":15}],3:[function(require,module,exports){
+},{"__browserify_process":14}],4:[function(require,module,exports){
 var events = require('events');
 var util = require('util');
 
@@ -622,7 +674,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":2,"util":4}],4:[function(require,module,exports){
+},{"events":3,"util":5}],5:[function(require,module,exports){
 var events = require('events');
 
 exports.isArray = isArray;
@@ -975,7 +1027,7 @@ exports.format = function(f) {
   return str;
 };
 
-},{"events":2}],5:[function(require,module,exports){
+},{"events":3}],6:[function(require,module,exports){
 exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
   var e, m,
       eLen = nBytes * 8 - mLen - 1,
@@ -1061,7 +1113,7 @@ exports.writeIEEE754 = function(buffer, value, offset, isBE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function(){var assert = require('assert');
 exports.Buffer = Buffer;
 exports.SlowBuffer = Buffer;
@@ -2145,7 +2197,7 @@ Buffer.prototype.writeDoubleBE = function(value, offset, noAssert) {
 };
 
 })()
-},{"./buffer_ieee754":5,"assert":1,"base64-js":7}],7:[function(require,module,exports){
+},{"./buffer_ieee754":6,"assert":2,"base64-js":8}],8:[function(require,module,exports){
 (function (exports) {
 	'use strict';
 
@@ -2293,7 +2345,7 @@ var xhrHttp = (function () {
     }
 })();
 
-},{"./lib/request":9,"events":2}],9:[function(require,module,exports){
+},{"./lib/request":10,"events":3}],10:[function(require,module,exports){
 (function(){var Stream = require('stream');
 var Response = require('./response');
 var concatStream = require('concat-stream')
@@ -2427,7 +2479,7 @@ var indexOf = function (xs, x) {
 };
 
 })()
-},{"./response":10,"buffer":6,"concat-stream":11,"stream":3}],10:[function(require,module,exports){
+},{"./response":11,"buffer":7,"concat-stream":12,"stream":4}],11:[function(require,module,exports){
 var Stream = require('stream');
 
 var Response = module.exports = function (res) {
@@ -2548,7 +2600,7 @@ var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{"stream":3}],11:[function(require,module,exports){
+},{"stream":4}],12:[function(require,module,exports){
 (function(Buffer){var stream = require('stream')
 var util = require('util')
 
@@ -2599,48 +2651,7 @@ module.exports = function(cb) {
 module.exports.ConcatStream = ConcatStream
 
 })(require("__browserify_Buffer").Buffer)
-},{"__browserify_Buffer":14,"stream":3,"util":4}],12:[function(require,module,exports){
-var d3 = require('d3');
-
-function Layer() {
-  this._data = null; 
-  this._width = 1000; 
-  this._height = 800;
-  this.x = d3.scale.linear();
-  this.y = d3.scale.linear();
-}
-
-Layer.prototype.xview = function(domain) {
-  if (!arguments.length) return this.x.domain();
-  this.x.domain(domain);
-  return this;
-}
-
-Layer.prototype.yview = function(domain) {
-  if (!arguments.length) return this.y.domain();
-  this.y.domain(domain);
-  return this;
-}
-
-Layer.prototype.height = function(height) {
-  if (!arguments.length) return this._height;
-  this._height = height;
-  this.y.range([height, 0]);
-  return this;
-}
-
-Layer.prototype.width = function(width) {
-  if (!arguments.length) return this._width;
-  this._width = width;
-  this.x.range([0, width]);
-  return this;
-}
-
-module.exports = Layer;
-
-},{"d3":"oN3yv0"}],"dfs":[function(require,module,exports){
-module.exports=require('wB6XlX');
-},{}],14:[function(require,module,exports){
+},{"__browserify_Buffer":13,"stream":4,"util":5}],13:[function(require,module,exports){
 require=(function(e,t,n,r){function i(r){if(!n[r]){if(!t[r]){if(e)return e(r);throw new Error("Cannot find module '"+r+"'")}var s=n[r]={exports:{}};t[r][0](function(e){var n=t[r][1][e];return i(n?n:e)},s,s.exports)}return n[r].exports}for(var s=0;s<r.length;s++)i(r[s]);return i})(typeof require!=="undefined"&&require,{1:[function(require,module,exports){
 // UTILITY
 var util = require('util');
@@ -6502,7 +6513,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 },{}]},{},[])
 ;;module.exports=require("buffer-browserify")
 
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -6556,7 +6567,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 d3 = function() {
   var d3 = {
     version: "3.2.5"
@@ -15358,7 +15369,7 @@ module.exports = d3;
 (function () { delete this.d3; })(); // unset global
 
 })()
-},{"./d3":16}],"wB6XlX":[function(require,module,exports){
+},{"./d3":15}],"wB6XlX":[function(require,module,exports){
 function sync_http(path) {
   var req = new window.XMLHttpRequest();
   req.open('GET', path, false);
@@ -15370,7 +15381,7 @@ function sync_http(path) {
 
 module.exports.readFileSync = sync_http;
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var d3 = require('d3');
 var figure = require('./figure.js')
 
@@ -15444,7 +15455,7 @@ figure.prototype.axes = function() {
 
 module.exports.default_layout = default_layout;
 
-},{"./figure.js":25,"d3":"oN3yv0"}],20:[function(require,module,exports){
+},{"./figure.js":23,"d3":"oN3yv0"}],19:[function(require,module,exports){
 var d3 = require('d3');
 var figure = require('./figure.js')
 
@@ -15472,9 +15483,7 @@ figure.prototype.brush = function() {
 
 module.exports = fig_brush;
 
-},{"./figure.js":25,"d3":"oN3yv0"}],"id3/lib/view.js":[function(require,module,exports){
-module.exports=require('T2GF4j');
-},{}],22:[function(require,module,exports){
+},{"./figure.js":23,"d3":"oN3yv0"}],20:[function(require,module,exports){
 function classcallable(cls) {
   /*
    * Replicate the __call__ magic method of python and let class instances
@@ -15497,7 +15506,7 @@ function classcallable(cls) {
 
 module.exports = classcallable
 
-},{}],23:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
 var Layer = require('./layer.js');
@@ -15600,7 +15609,7 @@ function Candlestick() {
 
 module.exports = callable(Candlestick);
 
-},{"./callable.js":22,"./layer.js":12,"d3":"oN3yv0"}],24:[function(require,module,exports){
+},{"./callable.js":20,"./layer.js":25,"d3":"oN3yv0"}],22:[function(require,module,exports){
 var d3 = require('d3');
 var _ = require('underscore');
 
@@ -15639,11 +15648,13 @@ function AxisContext() {
 
 module.exports = AxisContext;
 
-},{"d3":"oN3yv0","underscore":"SpOItP"}],25:[function(require,module,exports){
+},{"d3":"oN3yv0","underscore":"SpOItP"}],23:[function(require,module,exports){
 var d3 = require('d3');
-var axis = require('./context.js');
 var _ = require('underscore');
+
+var axis = require('./context.js');
 var callable = require('./callable.js');
+var View = require('id3/lib/view.js');
 
 var id3_id = 0;
 
@@ -15745,6 +15756,11 @@ function Figure() {
     }
     var layers = this.layers;
 
+    // wrap any non-Views
+    if (!layer.view_wrapped) {
+      layer = View().layer(layer);
+    }
+
     layers[id] = layer;
     // sync to plot
     layer.xview(this.x.domain());
@@ -15799,20 +15815,59 @@ module.exports = callable(Figure);
 require('./axes.js');
 require('./brush.js');
 
-},{"./axes.js":19,"./brush.js":20,"./callable.js":22,"./context.js":24,"d3":"oN3yv0","underscore":"SpOItP"}],"lCv9Cz":[function(require,module,exports){
+},{"./axes.js":18,"./brush.js":19,"./callable.js":20,"./context.js":22,"d3":"oN3yv0","id3/lib/view.js":30,"underscore":"SpOItP"}],"lCv9Cz":[function(require,module,exports){
 var Figure = require('./figure.js');
 var Line = require('./line.js');
 var Candlestick = require('./candlestick.js');
+var Marker = require('./marker.js');
 
 module.exports = {
   Figure: Figure, 
   Line: Line, 
+  Marker: Marker, 
   Candlestick: Candlestick
 }
 
-},{"./candlestick.js":23,"./figure.js":25,"./line.js":28}],"id3":[function(require,module,exports){
-module.exports=require('lCv9Cz');
-},{}],28:[function(require,module,exports){
+},{"./candlestick.js":21,"./figure.js":23,"./line.js":26,"./marker.js":27}],25:[function(require,module,exports){
+var d3 = require('d3');
+
+function Layer() {
+  this._data = null; 
+  this._width = 1000; 
+  this._height = 800;
+  this.x = d3.scale.linear();
+  this.y = d3.scale.linear();
+}
+
+Layer.prototype.xview = function(domain) {
+  if (!arguments.length) return this.x.domain();
+  this.x.domain(domain);
+  return this;
+}
+
+Layer.prototype.yview = function(domain) {
+  if (!arguments.length) return this.y.domain();
+  this.y.domain(domain);
+  return this;
+}
+
+Layer.prototype.height = function(height) {
+  if (!arguments.length) return this._height;
+  this._height = height;
+  this.y.range([height, 0]);
+  return this;
+}
+
+Layer.prototype.width = function(width) {
+  if (!arguments.length) return this._width;
+  this._width = width;
+  this.x.range([0, width]);
+  return this;
+}
+
+module.exports = Layer;
+
+},{"d3":"oN3yv0"}],26:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
 var Layer = require('./layer.js');
@@ -15876,13 +15931,121 @@ function Line() {
 
 module.exports = callable(Line)
 
-},{"./callable.js":22,"./layer.js":12,"d3":"oN3yv0"}],"underscore":[function(require,module,exports){
-module.exports=require('SpOItP');
-},{}],"http":[function(require,module,exports){
-module.exports=require('mLWiAC');
-},{}],"d3":[function(require,module,exports){
-module.exports=require('oN3yv0');
-},{}],"T2GF4j":[function(require,module,exports){
+},{"./callable.js":20,"./layer.js":25,"d3":"oN3yv0"}],27:[function(require,module,exports){
+var d3 = require('d3');
+var callable = require('./callable.js');
+var Layer = require('./layer.js');
+var true_index = require('./util').true_index;
+var where = require('./util').where;
+
+var id3_id = 0;
+
+Marker.prototype = Object.create(Layer.prototype);
+function Marker() {
+  this.id = id3_id++, 
+  this.x = d3.scale.linear();
+  this.y = d3.scale.linear();
+  this._width = 0; 
+  this._height = 0;
+  this._data = null; 
+
+  Layer.call(this);
+
+  this.__call__ = function(selection) {
+    var self = this;
+    var domain = this.x.domain();
+    var xslice = this.data().x.slice(domain[0], domain[1]);
+    var xdata = this.data().x;
+    var ydata = this.data().y;
+
+    valid = true_index(xdata, {'length':xslice.length,'start':domain[0],'end':domain[1]})
+
+    var markers = selection.selectAll("circle.dot")
+      .data(valid)
+
+    markers.enter().append("circle")
+      .attr("class", "dot")
+
+    markers.exit().remove()
+
+    markers.attr("r", 4)
+      .attr("cx", function(d, i) { return self.x(d); })
+      .attr("cy", function(d, i) { return self.y(ydata[d]); })
+  }
+
+  this.update = function() {
+    var domain = this.x.domain();
+    // Reset the internal y-domain
+    var yvals = this.data().y.slice(domain[0], domain[1]);
+    this.y.domain(d3.extent(yvals));
+    return this;
+  }
+
+  this.data = function(data) {
+    if (!arguments.length) return this._data;
+    data.y = where(data.y, data.x) // nulls the false values
+    this._data = data;
+
+    this.x.domain([0, this.data().x.length-1]);
+    this.y.domain(d3.extent(this.data().y));
+    return this;
+  }
+
+  this.size = function() {
+    return this.data().x.length;
+  }
+}
+
+module.exports = callable(Marker)
+
+},{"./callable.js":20,"./layer.js":25,"./util":28,"d3":"oN3yv0"}],28:[function(require,module,exports){
+var munging = require('./munging.js')
+
+module.exports = munging
+
+},{"./munging.js":29}],29:[function(require,module,exports){
+var d3 = require('d3');
+
+function true_index(arr, config) {
+  // Series.ix[start, end].true().index;
+  if (!config) { config = {}; } 
+  if (!config.length) { config.length = arr.length } 
+  config.start = config.start ? config.start : 0;
+  config.end = config.end ? config.end : config.length;
+  console.log(config);
+  var valid = new Array(config.length);
+  var j = 0;
+  for (var i=config.start; i <= config.end; i++) {
+    if (arr[i]) {
+      valid[j] = i;
+      j++;
+    }
+  }
+  valid = valid.slice(0, j);
+  return valid;
+}
+
+function where(arr, mask) {
+  var data = arr.slice(0);
+  for (var i=0; i < data.length; i++) {
+    if (!mask[i]) {
+      data[i] = null;
+    }
+  }
+  return data;
+}
+
+module.exports.true_index = true_index;
+module.exports.where = where;
+
+mask = [true, true, false, false, true, false]
+series = d3.range(mask.length);
+
+res = true_index(mask, {});
+res = true_index(mask, {'start':1});
+res = where(series, mask);
+
+},{"d3":"oN3yv0"}],30:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
 
@@ -15892,6 +16055,7 @@ function View() {
   this.y = null;
   this._width = 0; 
   this._height = 0;
+  this.view_wrapped = false;
 
   this.__call__ = function(selection) {
     return this.layer().__call__.call(this, selection);
@@ -15921,6 +16085,9 @@ View.prototype.layer = function(layer) {
    * We copy the View.prototype so we're not mucking the base View.prototype.
    */
   if (!arguments.length) return this._layer;
+  if (this.view_wrapped) {
+    throw new Error("This view has already wrapped a lyaer");
+  }
   this._layer = layer;
   // need to create a new copy of proto
   var middle = clone(View.prototype);
@@ -15928,6 +16095,7 @@ View.prototype.layer = function(layer) {
   this.__proto__ = middle;
   this.x = layer.x.copy();
   this.y = layer.y.copy();
+  this.view_wrapped = true;
   return this;
 }
 
@@ -15963,7 +16131,11 @@ View.prototype.width = function(width) {
 
 module.exports = callable(View);
 
-},{"./callable.js":22,"d3":"oN3yv0"}],"SpOItP":[function(require,module,exports){
+},{"./callable.js":20,"d3":"oN3yv0"}],"dfs":[function(require,module,exports){
+module.exports=require('wB6XlX');
+},{}],"underscore":[function(require,module,exports){
+module.exports=require('SpOItP');
+},{}],"SpOItP":[function(require,module,exports){
 (function(){//     Underscore.js 1.5.1
 //     http://underscorejs.org
 //     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -17212,5 +17384,13 @@ module.exports = callable(View);
 }).call(this);
 
 })()
+},{}],"./data.js":[function(require,module,exports){
+module.exports=require('WNltxV');
+},{}],"http":[function(require,module,exports){
+module.exports=require('mLWiAC');
+},{}],"d3":[function(require,module,exports){
+module.exports=require('oN3yv0');
+},{}],"id3":[function(require,module,exports){
+module.exports=require('lCv9Cz');
 },{}]},{},[])
 ;
