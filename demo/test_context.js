@@ -1,5 +1,6 @@
+var http = require('http');
 var d3 = require('d3');
-var fs = require('fs');
+var fs = require('dfs');
 var _ = require('underscore');
 var id3 = require('id3');
 var Line = id3.Line;
@@ -8,7 +9,7 @@ var Candlestick = id3.Candlestick;
 var View = require('id3/lib/view.js');
 
 // data
-var content = fs.readFileSync('./df.json');
+var content = fs.readFileSync('df.json');
 var df = JSON.parse(content);
 
 _.each(df, function(arr, key) {
@@ -97,5 +98,3 @@ fig3.x.attach(brush);
 fig3.grid();
 fig3.axes();
 fig3.layer(view, 'line');
-
-module.exports = null;

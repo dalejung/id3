@@ -26,6 +26,7 @@ var promise = deferred.promise;
 promise.then(function(entry) {
   var b = browserify();
   _.each(entry.deps, function(e, i) {
+    console.log(i);
     b.require(i);
   });
   return b;
