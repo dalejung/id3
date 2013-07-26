@@ -50,4 +50,4 @@ fig.layer(candle, 'candle');
 
 fig.default_layout();
 
-module.exports = null;
+//module.exports = null;
