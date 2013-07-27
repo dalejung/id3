@@ -7,6 +7,7 @@ var Line = id3.Line;
 var Figure = id3.Figure;
 var Candlestick = id3.Candlestick;
 var Marker = id3.Marker;
+var Layer = require('../lib/layer.js');
 
 // data
 var df = require('./data.js');
@@ -14,23 +15,16 @@ var df = require('./data.js');
 var high = Line().data(df.high);
 var markers = Marker().data({'x': df.gap_up, 'y': df.open});
 var candle = Candlestick().data(df);
+var layer = new Layer().data(df.low);
+
+layer.geom(Line());
+layer.geom(Marker().type('rect').marker_size(8).color('pink'));
 
 var WIDTH = 800;
 var HEIGHT = 400;
 
 d3.selectAll('body svg').remove();
 var svg = d3.select('body').append('svg:svg');
-var focus_svg = d3.select('body').append('svg:svg').attr('class', 'focus');
-
-focus = Figure();
-focus.width(WIDTH)
-  .margin({'left':40})
-  .height(100)
-  .index(df.index);
-
-focus(focus_svg);
-focus.layer(high, 'focus');
-var brush = focus.brush();
 
 fig = Figure();
 fig
@@ -39,14 +33,14 @@ fig
   .index(df.index);
 fig(svg);
 
-fig.x.attach(brush);
-
 fig.layer(high, 'line');
+fig.layer(layer, 'layer');
 fig.layer(markers, 'marker');
 fig.layer(candle, 'candle');
 
 // default to only first 100
-//fig.xchange([0, 100]);
+fig.xchange([0, 100]);
 
 fig.default_layout();
 
+module.exports = null;

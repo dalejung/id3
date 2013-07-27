@@ -15516,7 +15516,6 @@ function max(a, b){ return a > b ? a : b; }
 
 Candlestick.prototype = Object.create(Layer.prototype);
 function Candlestick() {
-  this._data = null; 
   this.open = null; 
   this.high = null; 
   this.low = null; 
@@ -15830,6 +15829,7 @@ module.exports = {
 
 },{"./candlestick.js":21,"./figure.js":23,"./line.js":26,"./marker.js":27}],25:[function(require,module,exports){
 var d3 = require('d3');
+var _ = require('underscore');
 
 function Layer() {
   this._data = null; 
@@ -15837,6 +15837,17 @@ function Layer() {
   this._height = 800;
   this.x = d3.scale.linear();
   this.y = d3.scale.linear();
+  this._geoms = [];
+
+  this.__call__ = function(selection) {
+    _.each(this.geom(), function(layer) {
+      layer.x = this.x;
+      layer.y = this.y;
+      layer.height(this.height());
+      layer.width(this.width());
+      layer(selection);
+    }, this);
+  }
 }
 
 Layer.prototype.xview = function(domain) {
@@ -15865,9 +15876,45 @@ Layer.prototype.width = function(width) {
   return this;
 }
 
+Layer.prototype.data = function(data) {
+  if (!arguments.length) return this._data;
+  this._data = data;
+  //this.x.domain([0, data.length-1]);
+  //this.y.domain(d3.extent(data));
+  return this;
+}
+
+Layer.prototype.size = function() {
+  return this.data().length;
+}
+
+Layer.prototype.update = function() {
+  var domain = this.x.domain();
+  // Reset the internal y-domain
+  this.y.domain(d3.extent(this.data().slice(domain[0], domain[1])));
+  return this;
+}
+
+Layer.prototype.geom = function(layer) {
+  if (!arguments.length) return this._geoms;
+  if(layer.data()) {
+    throw new Error("Cannot composite a layer that has already bound data");
+  }
+  layer.data(this.data());
+  layer.x = this.x;
+  layer.y = this.y;
+  this._geoms.push(layer);
+  return this;
+}
+
 module.exports = Layer;
 
-},{"d3":"oN3yv0"}],26:[function(require,module,exports){
+var View = require('./view.js');
+Layer.prototype.view = function() {
+  return new View().layer(this);
+}
+
+},{"./view.js":30,"d3":"oN3yv0","underscore":"SpOItP"}],26:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
 var Layer = require('./layer.js');
@@ -15877,11 +15924,6 @@ var id3_id = 0;
 Line.prototype = Object.create(Layer.prototype);
 function Line() {
   this.id = id3_id++, 
-  this.x = d3.scale.linear();
-  this.y = d3.scale.linear();
-  this._width = 0; 
-  this._height = 0;
-  this._data = null; 
 
   Layer.call(this);
 
@@ -15933,6 +15975,8 @@ module.exports = callable(Line)
 
 },{"./callable.js":20,"./layer.js":25,"d3":"oN3yv0"}],27:[function(require,module,exports){
 var d3 = require('d3');
+var _ = require('underscore');
+
 var callable = require('./callable.js');
 var Layer = require('./layer.js');
 var true_index = require('./util').true_index;
@@ -15942,12 +15986,11 @@ var id3_id = 0;
 
 Marker.prototype = Object.create(Layer.prototype);
 function Marker() {
-  this.id = id3_id++, 
-  this.x = d3.scale.linear();
-  this.y = d3.scale.linear();
-  this._width = 0; 
-  this._height = 0;
-  this._data = null; 
+  this.id = id3_id++;
+  this.svg_type = 'circle';
+  this.class_name = 'marker';
+  this._marker_size = 4;
+  this._color = 'blue';
 
   Layer.call(this);
 
@@ -15960,17 +16003,30 @@ function Marker() {
 
     valid = true_index(xdata, {'length':xslice.length,'start':domain[0],'end':domain[1]})
 
-    var markers = selection.selectAll("circle.dot")
+    var g = selection.selectAll('g.markers-'+this.id).data([1]);
+
+    g.enter()
+      .append('svg:g')
+      .attr("class", "markers-"+this.id);
+
+    var markers = g.selectAll(this.svg_type+"."+this.class_name)
       .data(valid)
 
-    markers.enter().append("circle")
-      .attr("class", "dot")
+    markers.enter().append(this.svg_type)
+      .attr("class", this.class_name)
 
     markers.exit().remove()
 
-    markers.attr("r", 4)
-      .attr("cx", function(d, i) { return self.x(d); })
-      .attr("cy", function(d, i) { return self.y(ydata[d]); })
+    markers.attr("fill", this.color())
+
+    xmap = function(d, i) { return self.x(d) }
+    ymap = function(d, i) { return self.y(ydata[d]) }
+    if (this.svg_type == 'circle') {
+      circle.call(this, markers, xmap, ymap);
+    }
+    if (this.svg_type == 'rect') {
+      rect.call(this, markers, xmap, ymap);
+    }
   }
 
   this.update = function() {
@@ -15983,7 +16039,16 @@ function Marker() {
 
   this.data = function(data) {
     if (!arguments.length) return this._data;
-    data.y = where(data.y, data.x) // nulls the false values
+
+    if (data instanceof Array) {
+      y = data;
+      data = {};
+      data.y = y;
+      data.x = d3.range(0, y.length);
+    } 
+    else {
+      data.y = where(data.y, data.x) // nulls the false values
+    }
     this._data = data;
 
     this.x.domain([0, this.data().x.length-1]);
@@ -15994,14 +16059,57 @@ function Marker() {
   this.size = function() {
     return this.data().x.length;
   }
+
+  this.type = function(type) {
+    if (!arguments.length) return this.svg_type;
+    this.svg_type = type;
+    return this;
+  }
+
+  this.marker_size = function(marker_size) {
+    if (!arguments.length) return this._marker_size;
+    this._marker_size = marker_size;
+    return this;
+  }
+
+  this.color = function(color) {
+    if (!arguments.length) return this._color;
+    this._color = color;
+    return this;
+  }
+}
+
+function circle(markers, xmap, ymap) {
+  markers.attr("r", this.marker_size())
+    .attr("cx", xmap)
+    .attr("cy", ymap)
+}
+
+function rect(markers, xmap, ymap) {
+  var xshift = this.marker_size() / 2;
+  var yshift = this.marker_size() / 2;
+  markers.attr("width", this.marker_size())
+    .attr("height", this.marker_size())
+    .attr("x", function(d) { return xmap(d) - xshift})
+    .attr("y", function(d) { return ymap(d) - yshift})
 }
 
 module.exports = callable(Marker)
 
-},{"./callable.js":20,"./layer.js":25,"./util":28,"d3":"oN3yv0"}],28:[function(require,module,exports){
+},{"./callable.js":20,"./layer.js":25,"./util":28,"d3":"oN3yv0","underscore":"SpOItP"}],28:[function(require,module,exports){
 var munging = require('./munging.js')
 
 module.exports = munging
+
+function clone(obj) {
+  if (null == obj || "object" != typeof obj) return obj;
+  var copy = {};
+  for (var attr in obj) {
+      if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+  }
+  return copy;
+}
+module.exports.clone = clone;
 
 },{"./munging.js":29}],29:[function(require,module,exports){
 var d3 = require('d3');
@@ -16012,7 +16120,6 @@ function true_index(arr, config) {
   if (!config.length) { config.length = arr.length } 
   config.start = config.start ? config.start : 0;
   config.end = config.end ? config.end : config.length;
-  console.log(config);
   var valid = new Array(config.length);
   var j = 0;
   for (var i=config.start; i <= config.end; i++) {
@@ -16048,6 +16155,7 @@ res = where(series, mask);
 },{"d3":"oN3yv0"}],30:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
+var clone = require('./util').clone
 
 function View() {
   this._layer = null;
@@ -16060,15 +16168,6 @@ function View() {
   this.__call__ = function(selection) {
     return this.layer().__call__.call(this, selection);
   }
-}
-
-function clone(obj) {
-  if (null == obj || "object" != typeof obj) return obj;
-  var copy = {};
-  for (var attr in obj) {
-      if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
-  }
-  return copy;
 }
 
 View.prototype.layer = function(layer) {
@@ -16131,7 +16230,7 @@ View.prototype.width = function(width) {
 
 module.exports = callable(View);
 
-},{"./callable.js":20,"d3":"oN3yv0"}],"dfs":[function(require,module,exports){
+},{"./callable.js":20,"./util":28,"d3":"oN3yv0"}],"dfs":[function(require,module,exports){
 module.exports=require('wB6XlX');
 },{}],"underscore":[function(require,module,exports){
 module.exports=require('SpOItP');

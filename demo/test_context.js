@@ -6,6 +6,7 @@ var id3 = require('id3');
 var Line = id3.Line;
 var Figure = id3.Figure;
 var Candlestick = id3.Candlestick;
+var Marker = id3.Marker;
 
 // data
 var df = require('./data.js');
@@ -61,7 +62,7 @@ fig.default_layout();
 fig2 = Figure();
 fig2
   .margin({'left':40})
-  .width(400)
+  .width(800)
   .height(300)
   .index(df.index);
 fig2(svg2);
@@ -70,6 +71,9 @@ fig2.x.attach(brush);
 fig2.grid();
 fig2.axes();
 fig2.layer(line, 'line');
+
+var markers = Marker().data({'x': df.gap_up, 'y': df.open}).color('green');
+fig.layer(markers, 'gapup');
 
 fig3 = Figure();
 fig3
@@ -84,4 +88,3 @@ fig3.grid();
 fig3.axes();
 fig3.layer(line, 'line');
 
-module.exports = null;
