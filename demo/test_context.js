@@ -7,6 +7,7 @@ var Line = id3.Line;
 var Figure = id3.Figure;
 var Candlestick = id3.Candlestick;
 var Marker = id3.Marker;
+var Layer = id3.Layer;
 
 // data
 var df = require('./data.js');
@@ -22,13 +23,11 @@ var line = Line().data(df2);
 var line2 = Line().data(df.high);
 var candle = Candlestick().data(df);
 
-var WIDTH = 800;
+var WIDTH = 1200;
 var HEIGHT = 400;
 
 d3.selectAll('body svg').remove();
 var svg = d3.select('body').append('svg:svg');
-var svg2 = d3.select('body').append('svg:svg');
-var svg3 = d3.select('body').append('svg:svg');
 var focus_svg = d3.select('body').append('svg:svg').attr('class', 'focus');
 
 focus = Figure();
@@ -59,32 +58,15 @@ fig.xchange([0, 100]);
 
 fig.default_layout();
 
-fig2 = Figure();
-fig2
-  .margin({'left':40})
-  .width(800)
-  .height(300)
-  .index(df.index);
-fig2(svg2);
-
-fig2.x.attach(brush);
-fig2.grid();
-fig2.axes();
-fig2.layer(line, 'line');
-
-var markers = Marker().data({'x': df.gap_up, 'y': df.open}).color('green');
+var markers = Layer().data({'x': df.gap_up, 'y': df.open})
+  .geom(Marker()
+    .color('blue')
+    .type('circle')
+    .size(13))
+  .geom(Marker()
+    .color('yellow')
+    .type('circle')
+    .size(8));
 fig.layer(markers, 'gapup');
 
-fig3 = Figure();
-fig3
-  .margin({'left':40})
-  .width(1300)
-  .height(100)
-  .index(df.index);
-fig3(svg3);
-
-fig3.x.attach(brush);
-fig3.grid();
-fig3.axes();
-fig3.layer(line, 'line');
-
+module.exports = null;

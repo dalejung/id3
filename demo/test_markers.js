@@ -18,7 +18,7 @@ var candle = Candlestick().data(df);
 var layer = new Layer().data(df.low);
 
 layer.geom(Line());
-layer.geom(Marker().type('rect').marker_size(8).color('pink'));
+layer.geom(Marker().type('rect').size(8).color('pink'));
 
 var WIDTH = 800;
 var HEIGHT = 400;
