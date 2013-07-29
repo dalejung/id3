@@ -24,14 +24,12 @@ var line2 = Line().data(df.high);
 var candle = Candlestick().data(df);
 
 var WIDTH = 1200;
-var HEIGHT = 400;
+var HEIGHT = 800;
 
-d3.selectAll('body svg').remove();
-var svg = d3.select('body').append('svg:svg');
-var focus_svg = d3.select('body').append('svg:svg').attr('class', 'focus');
-
+var svg = d3.select('#main');
+var focus_svg = d3.select('#focus');
 focus = Figure();
-focus.width(WIDTH)
+focus.width(800)
   .margin({'left':40})
   .height(100)
   .index(df.index);
@@ -69,4 +67,31 @@ var markers = Layer().data({'x': df.gap_up, 'y': df.open})
     .size(8));
 fig.layer(markers, 'gapup');
 
-module.exports = null;
+var circle = svg.append('svg:circle')
+  .attr('class', 'value')
+  .attr('cy', 100)
+  .attr('r', 5);
+
+var format = d3.time.format("%Y-%m-%d");
+svg.on("mousemove", function() { 
+  var x = d3.mouse(this)[0];
+  circle.attr('cx', x);
+  var d = Math.round(fig.x.scale.invert(x-40));
+  var startx = fig.x.domain()[0];
+  var el = fig.selection.selectAll('.candlestick')[0][d - startx];
+  d3.selectAll('.candlestick rect').attr('class', '');
+  d3.select(el).select('rect').attr('class', 'blue');
+  var text = '';
+  for (var key in df) {
+    if (!(df[key] instanceof Array)) {
+      continue;
+    }
+    var bit = df[key][d];
+    if (key == 'index') {
+      bit = format(new Date(bit /1000000));
+    }
+    text += key + ': '+bit + '<br />';
+  }
+  d3.select('#data-panel').html(text);
+});
+

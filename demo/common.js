@@ -15601,7 +15601,7 @@ function Candlestick() {
     return this.update()
   }
 
-  this.size = function() {
+  this.data_length = function() {
     return this.index.length;
   }
 }
@@ -15668,10 +15668,12 @@ function Figure() {
   this.layers = {};
   this.selection = null;
   this.canvas = null;
+  this.dispatch = d3.dispatch('mouseover');
 
   // default margin
   this.margin(0);
-  this.padding(0);
+  // default padding 5% of domain
+  this.padding(.05);
 
   var self = this;
   this.x.on('change.figure', function(domain) {
@@ -15716,6 +15718,19 @@ function Figure() {
     y_min = d3.min(y_domains, function(d) { return d[0] });
     y_max = d3.max(y_domains, function(d) { return d[1] });
 
+    var top = this.padding().top;
+    var bottom = this.padding().bottom;
+    var diff = y_max - y_min;
+
+    if (top < 1) {
+      top = parseInt(top * diff);
+    }
+    if (bottom < 1) {
+      bottom = parseInt(bottom * diff);
+    }
+    y_max = y_max + top;
+    y_min = y_min - bottom;
+
     new_y = [y_min, y_max];
     this.y.domain(new_y);
 
@@ -15746,9 +15761,9 @@ function Figure() {
   }
 
   this.layer = function(layer, id, redraw) {
-    if (layer.size() != this.index().length) {
+    if (layer.data_length() != this.index().length) {
       throw new Error('Layer data length mismatch fig.length:' + this.index().length
-          + id +'.size():' + layer.size());
+          + id +'.data_length():' + layer.data_length());
     }
     if (!id) {
       id = 'layer_'+id3_id++;
@@ -15796,7 +15811,10 @@ Figure.prototype.height = function(height) {
 
 Figure.prototype.padding = function(padding) {
   if (!arguments.length) return this._padding;
-  this._padding = padding;
+  if (typeof(padding) == 'number') {
+    padding = {'top': padding, 'left': padding, 'right': padding, 'bottom': padding};
+  }
+  this._padding = _.extend(this._padding, padding);
   return this;
 }
 
@@ -15814,20 +15832,22 @@ module.exports = callable(Figure);
 require('./axes.js');
 require('./brush.js');
 
-},{"./axes.js":18,"./brush.js":19,"./callable.js":20,"./context.js":22,"d3":"oN3yv0","id3/lib/view.js":30,"underscore":"SpOItP"}],"lCv9Cz":[function(require,module,exports){
+},{"./axes.js":18,"./brush.js":19,"./callable.js":20,"./context.js":22,"d3":"oN3yv0","id3/lib/view.js":35,"underscore":"SpOItP"}],"lCv9Cz":[function(require,module,exports){
 var Figure = require('./figure.js');
 var Line = require('./line.js');
 var Candlestick = require('./candlestick.js');
 var Marker = require('./marker.js');
+var Layer = require('./layer.js');
 
 module.exports = {
+  Layer: function() { return new Layer() }, 
   Figure: Figure, 
   Line: Line, 
   Marker: Marker, 
   Candlestick: Candlestick
 }
 
-},{"./candlestick.js":21,"./figure.js":23,"./line.js":26,"./marker.js":27}],25:[function(require,module,exports){
+},{"./candlestick.js":21,"./figure.js":23,"./layer.js":25,"./line.js":26,"./marker.js":27}],25:[function(require,module,exports){
 var d3 = require('d3');
 var _ = require('underscore');
 
@@ -15884,14 +15904,27 @@ Layer.prototype.data = function(data) {
   return this;
 }
 
-Layer.prototype.size = function() {
-  return this.data().length;
+Layer.prototype.data_length = function() {
+  var data = this.data();
+  if (data instanceof Array) {
+    return this.data().length;
+  }
+  for(var key in data) {
+    var series = data[key];
+    return series.length;
+  }
 }
 
 Layer.prototype.update = function() {
   var domain = this.x.domain();
+  var data = this.data();
   // Reset the internal y-domain
-  this.y.domain(d3.extent(this.data().slice(domain[0], domain[1])));
+  if (data instanceof Array) {
+    this.y.domain(d3.extent(data.slice(domain[0], domain[1])));
+  }
+  if ('y' in data) {
+    this.y.domain(d3.extent(data.y.slice(domain[0], domain[1])));
+  }
   return this;
 }
 
@@ -15914,7 +15947,7 @@ Layer.prototype.view = function() {
   return new View().layer(this);
 }
 
-},{"./view.js":30,"d3":"oN3yv0","underscore":"SpOItP"}],26:[function(require,module,exports){
+},{"./view.js":35,"d3":"oN3yv0","underscore":"SpOItP"}],26:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
 var Layer = require('./layer.js');
@@ -15966,7 +15999,7 @@ function Line() {
     return this;
   }
 
-  this.size = function() {
+  this.data_length = function() {
     return this.data().length;
   }
 }
@@ -15987,12 +16020,19 @@ var id3_id = 0;
 Marker.prototype = Object.create(Layer.prototype);
 function Marker() {
   this.id = id3_id++;
-  this.svg_type = 'circle';
+  this.svg_type = null;
   this.class_name = 'marker';
-  this._marker_size = 4;
-  this._color = 'blue';
+  this._size = null;
+  this._color = null;
+  this.path_gen = d3.svg.symbol();
+
+  this.color('blue');
+  this.type('circle');
+  this.size(20);
 
   Layer.call(this);
+
+  var pow = d3.scale.pow().exponent(2);
 
   this.__call__ = function(selection) {
     var self = this;
@@ -16001,7 +16041,14 @@ function Marker() {
     var xdata = this.data().x;
     var ydata = this.data().y;
 
-    valid = true_index(xdata, {'length':xslice.length,'start':domain[0],'end':domain[1]})
+    // grab only the values that are true
+    valid = true_index(xdata, {'length':xslice.length,'start':domain[0],'end':domain[1]});
+
+    // scale size
+    var length = valid.length;
+    var point = .01 * this.width() / length;
+    var size = Math.pow(point * this.size(), 2);
+    this.path_gen.size(size);
 
     var g = selection.selectAll('g.markers-'+this.id).data([1]);
 
@@ -16009,24 +16056,19 @@ function Marker() {
       .append('svg:g')
       .attr("class", "markers-"+this.id);
 
-    var markers = g.selectAll(this.svg_type+"."+this.class_name)
-      .data(valid)
+    var markers = g.selectAll('path')
+      .data(valid);
 
-    markers.enter().append(this.svg_type)
-      .attr("class", this.class_name)
+    markers.enter().append("path");
+    markers.exit().remove();
 
-    markers.exit().remove()
+    markers.attr("fill", this.color());
+    markers.attr("stroke", 'black');
 
-    markers.attr("fill", this.color())
-
-    xmap = function(d, i) { return self.x(d) }
-    ymap = function(d, i) { return self.y(ydata[d]) }
-    if (this.svg_type == 'circle') {
-      circle.call(this, markers, xmap, ymap);
-    }
-    if (this.svg_type == 'rect') {
-      rect.call(this, markers, xmap, ymap);
-    }
+    markers
+      .attr("transform", 
+          function(d) { return "translate("+ self.x(d) + "," + self.y(ydata[d]) + ")";})
+      .attr("d", this.path_gen);
   }
 
   this.update = function() {
@@ -16036,60 +16078,84 @@ function Marker() {
     this.y.domain(d3.extent(yvals));
     return this;
   }
+}
 
-  this.data = function(data) {
-    if (!arguments.length) return this._data;
+Marker.prototype.data = function(data) {
+  if (!arguments.length) return this._data;
 
-    if (data instanceof Array) {
-      y = data;
-      data = {};
-      data.y = y;
-      data.x = d3.range(0, y.length);
-    } 
-    else {
-      data.y = where(data.y, data.x) // nulls the false values
-    }
-    this._data = data;
-
-    this.x.domain([0, this.data().x.length-1]);
-    this.y.domain(d3.extent(this.data().y));
-    return this;
+  if (data instanceof Array) {
+    y = data;
+    data = {};
+    data.y = y;
+    data.x = d3.range(0, y.length);
+  } 
+  else {
+    data.y = where(data.y, data.x) // nulls the false values
   }
+  this._data = data;
 
-  this.size = function() {
-    return this.data().x.length;
+  this.x.domain([0, this.data().x.length-1]);
+  this.y.domain(d3.extent(this.data().y));
+  return this;
+}
+
+Marker.prototype.data_length = function() {
+  return this.data().x.length;
+}
+
+Marker.prototype.type = function(type) {
+  if (!arguments.length) return this.svg_type;
+  this.svg_type = type;
+  this.path_gen.type(type);
+  return this;
+}
+
+Marker.prototype.size = function(size) {
+  if (!arguments.length) return this._size;
+  this._size = size;
+  this.path_gen.size(size);
+  return this;
+}
+
+Marker.prototype.color = function(color) {
+  if (!arguments.length) return this._color;
+  this._color = color;
+  return this;
+}
+
+function elem() {
+  // older rect/circle svg shape stuff
+  var markers = g.selectAll(this.svg_type+"."+this.class_name)
+    .data(valid)
+
+  markers.enter().append(this.svg_type)
+    .attr("class", this.class_name)
+
+  markers.exit().remove()
+
+  markers.attr("fill", this.color())
+
+  xmap = function(d, i) { return self.x(d) }
+  ymap = function(d, i) { return self.y(ydata[d]) }
+  if (this.svg_type == 'circle') {
+    circle.call(this, markers, xmap, ymap);
   }
-
-  this.type = function(type) {
-    if (!arguments.length) return this.svg_type;
-    this.svg_type = type;
-    return this;
-  }
-
-  this.marker_size = function(marker_size) {
-    if (!arguments.length) return this._marker_size;
-    this._marker_size = marker_size;
-    return this;
-  }
-
-  this.color = function(color) {
-    if (!arguments.length) return this._color;
-    this._color = color;
-    return this;
+  if (this.svg_type == 'rect') {
+    rect.call(this, markers, xmap, ymap);
   }
 }
 
 function circle(markers, xmap, ymap) {
-  markers.attr("r", this.marker_size())
+  markers.attr("r", this.size())
     .attr("cx", xmap)
     .attr("cy", ymap)
 }
 
 function rect(markers, xmap, ymap) {
-  var xshift = this.marker_size() / 2;
-  var yshift = this.marker_size() / 2;
-  markers.attr("width", this.marker_size())
-    .attr("height", this.marker_size())
+  var xshift = this.size() / 2;
+  var yshift = this.size() / 2;
+  markers.attr("width", this.size())
+    .attr("height", this.size())
     .attr("x", function(d) { return xmap(d) - xshift})
     .attr("y", function(d) { return ymap(d) - yshift})
 }
@@ -16152,7 +16218,17 @@ res = true_index(mask, {});
 res = true_index(mask, {'start':1});
 res = where(series, mask);
 
-},{"d3":"oN3yv0"}],30:[function(require,module,exports){
+},{"d3":"oN3yv0"}],"underscore":[function(require,module,exports){
+module.exports=require('SpOItP');
+},{}],"dfs":[function(require,module,exports){
+module.exports=require('wB6XlX');
+},{}],"./data.js":[function(require,module,exports){
+module.exports=require('WNltxV');
+},{}],"http":[function(require,module,exports){
+module.exports=require('mLWiAC');
+},{}],"d3":[function(require,module,exports){
+module.exports=require('oN3yv0');
+},{}],35:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
 var clone = require('./util').clone
@@ -16230,10 +16306,8 @@ View.prototype.width = function(width) {
 
 module.exports = callable(View);
 
-},{"./callable.js":20,"./util":28,"d3":"oN3yv0"}],"dfs":[function(require,module,exports){
-module.exports=require('wB6XlX');
-},{}],"underscore":[function(require,module,exports){
-module.exports=require('SpOItP');
+},{"./callable.js":20,"./util":28,"d3":"oN3yv0"}],"id3":[function(require,module,exports){
+module.exports=require('lCv9Cz');
 },{}],"SpOItP":[function(require,module,exports){
 (function(){//     Underscore.js 1.5.1
 //     http://underscorejs.org
@@ -17483,13 +17557,5 @@ module.exports=require('SpOItP');
 }).call(this);
 
 })()
-},{}],"./data.js":[function(require,module,exports){
-module.exports=require('WNltxV');
-},{}],"http":[function(require,module,exports){
-module.exports=require('mLWiAC');
-},{}],"d3":[function(require,module,exports){
-module.exports=require('oN3yv0');
-},{}],"id3":[function(require,module,exports){
-module.exports=require('lCv9Cz');
 },{}]},{},[])
 ;
