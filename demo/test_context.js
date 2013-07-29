@@ -27,6 +27,7 @@ var WIDTH = 1200;
 var HEIGHT = 800;
 
 var svg = d3.select('#main');
+var svg2 = d3.select('#second');
 var focus_svg = d3.select('#focus');
 focus = Figure();
 focus.width(800)
@@ -55,6 +56,17 @@ fig.layer(candle, 'candle');
 fig.xchange([0, 100]);
 
 fig.default_layout();
+
+fig2 = Figure();
+fig2
+  .width(400)
+  .height(200)
+  .index(df.index);
+fig2(svg2);
+
+fig2.x.attach(brush);
+
+fig2.layer(line, 'line');
 
 var markers = Layer().data({'x': df.gap_up, 'y': df.open})
   .geom(Marker()
