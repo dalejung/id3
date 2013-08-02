@@ -15523,6 +15523,7 @@ function Candlestick() {
   this.low = null; 
   this.close = null; 
   this.index = null;
+  this._id3_type = 'candlestick';
 
   Layer.call(this);
 
@@ -15670,7 +15671,7 @@ function Figure() {
   this._padding = {};
   this._margin = {};
   this.index = null;
-  this.layers = {};
+  this.layers = [];
   this.selection = null;
   this.canvas = null;
   this.dispatch = d3.dispatch('mouseover');
@@ -15707,11 +15708,10 @@ function Figure() {
     this.x.domain(domain);
     var layers = this.layers;
 
-    for (var id in layers) {
-      var layer = layers[id];
+    _.each(this.layers, function(layer) {
       layer.xview(domain);
       layer.update();
-    }
+    });
 
     this.merge_y();
     this.redraw();
@@ -15729,10 +15729,10 @@ function Figure() {
     var diff = y_max - y_min;
 
     if (top < 1) {
-      top = parseInt(top * diff);
+      top = top * diff;
     }
     if (bottom < 1) {
-      bottom = parseInt(bottom * diff);
+      bottom = bottom * diff
     }
     y_max = y_max + top;
     y_min = y_min - bottom;
@@ -15781,7 +15781,7 @@ function Figure() {
       layer = View().layer(layer);
     }
 
-    layers[id] = layer;
+    layers.push(layer);
     // sync to plot
     layer.xview(this.x.domain());
     layer.yview(this.y.domain());
@@ -15854,7 +15854,7 @@ module.exports = callable(Figure);
 require('./axes.js');
 require('./brush.js');
 
-},{"./axes.js":18,"./brush.js":19,"./callable.js":20,"./context.js":22,"d3":"+9wJHP","id3/lib/view.js":34,"underscore":"o6W2eo"}],"Np7oqH":[function(require,module,exports){
+},{"./axes.js":18,"./brush.js":19,"./callable.js":20,"./context.js":22,"d3":"+9wJHP","id3/lib/view.js":35,"underscore":"o6W2eo"}],"Np7oqH":[function(require,module,exports){
 var Figure = require('./figure.js');
 var Line = require('./line.js');
 var Candlestick = require('./candlestick.js');
@@ -16001,7 +16001,7 @@ Layer.prototype.view = function() {
   return new View().layer(this);
 }
 
-},{"./view.js":34,"d3":"+9wJHP","underscore":"o6W2eo"}],26:[function(require,module,exports){
+},{"./view.js":35,"d3":"+9wJHP","underscore":"o6W2eo"}],26:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
 var Layer = require('./layer.js');
@@ -16010,13 +16010,21 @@ var id3_id = 0;
 
 Line.prototype = Object.create(Layer.prototype);
 function Line() {
-  this.id = id3_id++, 
+  this.id = id3_id++;
+  this._id3_type = 'line';
+  this._color = null;
+  this._stroke_width = null;
 
   Layer.call(this);
 
+  this.color('blue');
+
   this.__call__ = function(selection) {
-    selection.selectAll('path.this'+this.id).data([0]).enter().append('svg:path').attr('class', 'this'+this.id);
-    var path = selection.selectAll('.this'+this.id).style('stroke','blue').style('fill', 'none');
+    selection.selectAll('path.line'+this.id).data([0]).enter().append('svg:path').attr('class', 'line-plot line'+this.id);
+    var path = selection.selectAll('.line'+this.id)
+      .style('stroke', this.color())
+      .style('stroke-width', this.stroke_width())
+      .style('fill', 'none');
     path.attr('d', this.path_gen());
   }
 
@@ -16047,6 +16055,11 @@ function Line() {
 
   this.data = function(data) {
     if (!arguments.length) return this._data;
+
+    // handle pd.Series
+    if (data._pandas_type == 'series') {
+      data = data.data;
+    }
     this._data = data;
     this.x.domain([0, data.length-1]);
     this.y.domain(d3.extent(data));
@@ -16056,6 +16069,18 @@ function Line() {
   this.data_length = function() {
     return this.data().length;
   }
+}
+
+Line.prototype.color = function(color) {
+  if (!arguments.length) return this._color;
+  this._color = color;
+  return this;
+}
+
+Line.prototype.stroke_width = function(stroke_width) {
+  if (!arguments.length) return this._stroke_width;
+  this._stroke_width = stroke_width;
+  return this;
 }
 
 module.exports = callable(Line)
@@ -16075,6 +16100,7 @@ Marker.prototype = Object.create(Layer.prototype);
 function Marker() {
   this.id = id3_id++;
   this.svg_type = null;
+  this._id3_type = 'marker';
   this.class_name = 'marker';
   this._size = null;
   this._color = null;
@@ -16099,16 +16125,19 @@ function Marker() {
     valid = true_index(xdata, {'length':xslice.length,'start':domain[0],'end':domain[1]});
 
     // scale size
-    var length = valid.length;
-    var point = .01 * this.width() / length;
-    var size = Math.pow(point * this.size(), 2);
+    var length = xslice.length;
+    var point = this.width() / length;
+    var divisor = 100;
+    var marker_width = point * this.size() / divisor;
+    marker_width += Math.log(length / (1+point)) - 2;
+    var size = Math.pow(marker_width, 2);
     this.path_gen.size(size);
 
     var g = selection.selectAll('g.markers-'+this.id).data([1]);
 
     g.enter()
       .append('svg:g')
-      .attr("class", "markers-"+this.id);
+      .attr("class", "marker-plot markers-"+this.id);
 
     var markers = g.selectAll('path')
       .data(valid);
@@ -16145,6 +16174,12 @@ Marker.prototype.data = function(data) {
     data.y = y;
     data.x = where(d3.range(0, y.length), data.y);
   } 
+  else if (data._pandas_type == 'series') {
+    y = data.data;
+    data = {};
+    data.y = y;
+    data.x = where(d3.range(0, y.length), data.y);
+  }
   else {
     data.y = where(data.y, data.x) // nulls the false values
   }
@@ -16274,15 +16309,17 @@ res = true_index(mask, {});
 res = true_index(mask, {'start':1});
 res = where(series, mask);
 
-},{"d3":"+9wJHP"}],"dfs":[function(require,module,exports){
-module.exports=require('4bng+E');
-},{}],"underscore":[function(require,module,exports){
+},{"d3":"+9wJHP"}],"underscore":[function(require,module,exports){
 module.exports=require('o6W2eo');
+},{}],"dfs":[function(require,module,exports){
+module.exports=require('4bng+E');
 },{}],"./data.js":[function(require,module,exports){
 module.exports=require('WNltxV');
 },{}],"http":[function(require,module,exports){
 module.exports=require('Hej6ZR');
-},{}],34:[function(require,module,exports){
+},{}],"d3":[function(require,module,exports){
+module.exports=require('+9wJHP');
+},{}],35:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
 var clone = require('./util').clone
@@ -16337,7 +16374,9 @@ View.prototype.update = function() {
 
 module.exports = callable(View);
 
-},{"./callable.js":20,"./layer.js":25,"./util":28,"d3":"+9wJHP"}],"o6W2eo":[function(require,module,exports){
+},{"./callable.js":20,"./layer.js":25,"./util":28,"d3":"+9wJHP"}],"id3":[function(require,module,exports){
+module.exports=require('Np7oqH');
+},{}],"o6W2eo":[function(require,module,exports){
 (function(){//     Underscore.js 1.5.1
 //     http://underscorejs.org
 //     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -17586,9 +17625,5 @@ module.exports = callable(View);
 }).call(this);
 
 })()
-},{}],"d3":[function(require,module,exports){
-module.exports=require('+9wJHP');
-},{}],"id3":[function(require,module,exports){
-module.exports=require('Np7oqH');
 },{}]},{},[])
 ;
