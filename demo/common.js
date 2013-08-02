@@ -50,7 +50,7 @@ df.gaps = {'x':xdata, 'y':ydata}
 
 module.exports = df;
 
-},{"dfs":"wB6XlX","underscore":"SpOItP"}],2:[function(require,module,exports){
+},{"dfs":"4bng+E","underscore":"o6W2eo"}],2:[function(require,module,exports){
 (function(){// UTILITY
 var util = require('util');
 var Buffer = require("buffer").Buffer;
@@ -2283,7 +2283,7 @@ Buffer.prototype.writeDoubleBE = function(value, offset, noAssert) {
 	module.exports.fromByteArray = uint8ToBase64;
 }());
 
-},{}],"mLWiAC":[function(require,module,exports){
+},{}],"Hej6ZR":[function(require,module,exports){
 var http = module.exports;
 var EventEmitter = require('events').EventEmitter;
 var Request = require('./lib/request');
@@ -15363,13 +15363,13 @@ d3 = function() {
   });
   return d3;
 }();
-},{}],"oN3yv0":[function(require,module,exports){
+},{}],"+9wJHP":[function(require,module,exports){
 (function(){require("./d3");
 module.exports = d3;
 (function () { delete this.d3; })(); // unset global
 
 })()
-},{"./d3":15}],"wB6XlX":[function(require,module,exports){
+},{"./d3":15}],"4bng+E":[function(require,module,exports){
 function sync_http(path) {
   var req = new window.XMLHttpRequest();
   req.open('GET', path, false);
@@ -15455,25 +15455,27 @@ figure.prototype.axes = function() {
 
 module.exports.default_layout = default_layout;
 
-},{"./figure.js":23,"d3":"oN3yv0"}],19:[function(require,module,exports){
+},{"./figure.js":23,"d3":"+9wJHP"}],19:[function(require,module,exports){
 var d3 = require('d3');
 var figure = require('./figure.js')
 
 function fig_brush(fig, height) {
   var length = fig.index().length;
-  var datax = d3.scale.linear().domain([0, length]).range([0, fig.width()]);
   var brush = d3.svg.brush()
-      .x(datax);
+      .x(fig.x.scale);
 
   // attach brush to dom
-  fig.canvas
+  var gbrush = fig.canvas
     .append("g")
-        .attr("class", "x brush")
-        .call(brush)
+        .attr("class", "x brush");
+
+  gbrush
+      .call(brush)
       .selectAll("rect")
         .attr("y", -6)
         .attr("height", fig.height() + 7);
 
+  brush.g = gbrush;
   return brush;
 }
 
@@ -15483,7 +15485,7 @@ figure.prototype.brush = function() {
 
 module.exports = fig_brush;
 
-},{"./figure.js":23,"d3":"oN3yv0"}],20:[function(require,module,exports){
+},{"./figure.js":23,"d3":"+9wJHP"}],20:[function(require,module,exports){
 function classcallable(cls) {
   /*
    * Replicate the __call__ magic method of python and let class instances
@@ -15608,7 +15610,7 @@ function Candlestick() {
 
 module.exports = callable(Candlestick);
 
-},{"./callable.js":20,"./layer.js":25,"d3":"oN3yv0"}],22:[function(require,module,exports){
+},{"./callable.js":20,"./layer.js":25,"d3":"+9wJHP"}],22:[function(require,module,exports){
 var d3 = require('d3');
 var _ = require('underscore');
 
@@ -15621,9 +15623,12 @@ function AxisContext() {
 
   function axis(i) { return scale.call(scale, i)}
 
-  axis.attach = function(brush) {
+  axis.attach = function(brush, type) {
     var self = this;
-    brush.on('brush.axis'+id, function() {
+    if (!type) {
+      type = 'brush';
+    }
+    brush.on(type+'.axis'+id, function() {
       var domain = brush.empty() ? self.scale.domain() : brush.extent();
       // brush won't give us integers
       domain = _.map(domain, Math.round);
@@ -15647,7 +15652,7 @@ function AxisContext() {
 
 module.exports = AxisContext;
 
-},{"d3":"oN3yv0","underscore":"SpOItP"}],23:[function(require,module,exports){
+},{"d3":"+9wJHP","underscore":"o6W2eo"}],23:[function(require,module,exports){
 var d3 = require('d3');
 var _ = require('underscore');
 
@@ -15660,8 +15665,8 @@ var id3_id = 0;
 function Figure() {
   this.x = axis();
   this.y = axis();
-  this._width = 800;
-  this._height = 400; 
+  this._width = null;
+  this._height = null; 
   this._padding = {};
   this._margin = {};
   this.index = null;
@@ -15681,6 +15686,8 @@ function Figure() {
   }); 
 
   this.__call__ = function(selection) {
+    this.selection = selection;
+
     var margin = this.margin();
     var width = this.width();
     var height = this.height();
@@ -15693,7 +15700,6 @@ function Figure() {
     canvas
       .attr("transform", "translate("+margin.left+", "+margin.top+")");
 
-    this.selection = selection;
     this.canvas = canvas;
   }
 
@@ -15796,14 +15802,30 @@ function Figure() {
 
 
 Figure.prototype.width = function(width) {
-  if (!arguments.length) return this._width;
+  if (!arguments.length) {
+    var width = this._width;
+    // default to offsetWidth
+    if (!width) {
+      width = this.selection[0][0].offsetWidth;
+      this.x.range([0, width]);
+    }
+    return width;
+  }
   this._width = width;
   this.x.range([0, width]);
   return this;
 }
 
 Figure.prototype.height = function(height) {
-  if (!arguments.length) return this._height;
+  if (!arguments.length) {
+    var height = this._height;
+    // default to offsetHeight
+    if (!height) {
+      height = this.selection[0][0].offsetHeight;
+      this.y.range([height, 0]);
+    }
+    return height;
+  }
   this._height = height;
   this.y.range([height, 0]);
   return this;
@@ -15832,7 +15854,7 @@ module.exports = callable(Figure);
 require('./axes.js');
 require('./brush.js');
 
-},{"./axes.js":18,"./brush.js":19,"./callable.js":20,"./context.js":22,"d3":"oN3yv0","id3/lib/view.js":35,"underscore":"SpOItP"}],"lCv9Cz":[function(require,module,exports){
+},{"./axes.js":18,"./brush.js":19,"./callable.js":20,"./context.js":22,"d3":"+9wJHP","id3/lib/view.js":34,"underscore":"o6W2eo"}],"Np7oqH":[function(require,module,exports){
 var Figure = require('./figure.js');
 var Line = require('./line.js');
 var Candlestick = require('./candlestick.js');
@@ -15861,10 +15883,6 @@ function Layer() {
 
   this.__call__ = function(selection) {
     _.each(this.geom(), function(layer) {
-      layer.x = this.x;
-      layer.y = this.y;
-      layer.height(this.height());
-      layer.width(this.width());
       layer(selection);
     }, this);
   }
@@ -15873,12 +15891,22 @@ function Layer() {
 Layer.prototype.xview = function(domain) {
   if (!arguments.length) return this.x.domain();
   this.x.domain(domain);
+
+  // set xview on all geoms
+  _.each(this.geom(), function(geom) {
+    geom.xview(domain);
+  });
   return this;
 }
 
 Layer.prototype.yview = function(domain) {
   if (!arguments.length) return this.y.domain();
   this.y.domain(domain);
+
+  // set yview on all geoms
+  _.each(this.geom(), function(geom) {
+    geom.yview(domain);
+  });
   return this;
 }
 
@@ -15886,6 +15914,11 @@ Layer.prototype.height = function(height) {
   if (!arguments.length) return this._height;
   this._height = height;
   this.y.range([height, 0]);
+
+  // set height on all geoms
+  _.each(this.geom(), function(geom) {
+    geom.height(height);
+  });
   return this;
 }
 
@@ -15893,6 +15926,11 @@ Layer.prototype.width = function(width) {
   if (!arguments.length) return this._width;
   this._width = width;
   this.x.range([0, width]);
+
+  // set width on all geoms
+  _.each(this.geom(), function(geom) {
+    geom.width(width);
+  });
   return this;
 }
 
@@ -15911,7 +15949,9 @@ Layer.prototype.data_length = function() {
   }
   for(var key in data) {
     var series = data[key];
-    return series.length;
+    if (Array.isArray(series)) {
+      return series.length;
+    }
   }
 }
 
@@ -15925,6 +15965,20 @@ Layer.prototype.update = function() {
   if ('y' in data) {
     this.y.domain(d3.extent(data.y.slice(domain[0], domain[1])));
   }
+  if (!this.geom()) {
+    return this;
+  }
+
+  // call update on all geoms
+  _.each(this.geom(), function(geom) {
+    geom.update(domain);
+  });
+  // taken form figure.js. grab consolidated yview
+  y_domains = _.invoke(this.geom(), 'yview');
+  //merged y-domains
+  y_min = d3.min(y_domains, function(d) { return d[0] });
+  y_max = d3.max(y_domains, function(d) { return d[1] });
+  this.yview([y_min, y_max]);
   return this;
 }
 
@@ -15934,8 +15988,8 @@ Layer.prototype.geom = function(layer) {
     throw new Error("Cannot composite a layer that has already bound data");
   }
   layer.data(this.data());
-  layer.x = this.x;
-  layer.y = this.y;
+  layer.x = this.x.copy();
+  layer.y = this.y.copy();
   this._geoms.push(layer);
   return this;
 }
@@ -15947,7 +16001,7 @@ Layer.prototype.view = function() {
   return new View().layer(this);
 }
 
-},{"./view.js":35,"d3":"oN3yv0","underscore":"SpOItP"}],26:[function(require,module,exports){
+},{"./view.js":34,"d3":"+9wJHP","underscore":"o6W2eo"}],26:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
 var Layer = require('./layer.js');
@@ -16006,7 +16060,7 @@ function Line() {
 
 module.exports = callable(Line)
 
-},{"./callable.js":20,"./layer.js":25,"d3":"oN3yv0"}],27:[function(require,module,exports){
+},{"./callable.js":20,"./layer.js":25,"d3":"+9wJHP"}],27:[function(require,module,exports){
 var d3 = require('d3');
 var _ = require('underscore');
 
@@ -16084,10 +16138,12 @@ Marker.prototype.data = function(data) {
   if (!arguments.length) return this._data;
 
   if (data instanceof Array) {
+    // Series passed in with each non-null value 
+    // resulting in a marker.
     y = data;
     data = {};
     data.y = y;
-    data.x = d3.range(0, y.length);
+    data.x = where(d3.range(0, y.length), data.y);
   } 
   else {
     data.y = where(data.y, data.x) // nulls the false values
@@ -16162,7 +16218,7 @@ function rect(markers, xmap, ymap) {
 
 module.exports = callable(Marker)
 
-},{"./callable.js":20,"./layer.js":25,"./util":28,"d3":"oN3yv0","underscore":"SpOItP"}],28:[function(require,module,exports){
+},{"./callable.js":20,"./layer.js":25,"./util":28,"d3":"+9wJHP","underscore":"o6W2eo"}],28:[function(require,module,exports){
 var munging = require('./munging.js')
 
 module.exports = munging
@@ -16218,20 +16274,21 @@ res = true_index(mask, {});
 res = true_index(mask, {'start':1});
 res = where(series, mask);
 
-},{"d3":"oN3yv0"}],"underscore":[function(require,module,exports){
-module.exports=require('SpOItP');
-},{}],"dfs":[function(require,module,exports){
-module.exports=require('wB6XlX');
+},{"d3":"+9wJHP"}],"dfs":[function(require,module,exports){
+module.exports=require('4bng+E');
+},{}],"underscore":[function(require,module,exports){
+module.exports=require('o6W2eo');
 },{}],"./data.js":[function(require,module,exports){
 module.exports=require('WNltxV');
 },{}],"http":[function(require,module,exports){
-module.exports=require('mLWiAC');
-},{}],"d3":[function(require,module,exports){
-module.exports=require('oN3yv0');
-},{}],35:[function(require,module,exports){
+module.exports=require('Hej6ZR');
+},{}],34:[function(require,module,exports){
 var d3 = require('d3');
 var callable = require('./callable.js');
 var clone = require('./util').clone
+var Layer = require('./layer.js');
+
+View.prototype = Object.create(Layer.prototype);
 
 function View() {
   this._layer = null;
@@ -16278,37 +16335,9 @@ View.prototype.update = function() {
   return this.layer().update.call(this);
 }
 
-View.prototype.xview = function(domain) {
-  if (!arguments.length) return this.x.domain();
-  this.x.domain(domain);
-  return this;
-}
-
-View.prototype.yview = function(domain) {
-  if (!arguments.length) return this.y.domain();
-  this.y.domain(domain);
-  return this;
-}
-
-View.prototype.height = function(height) {
-  if (!arguments.length) return this._height;
-  this._height = height;
-  this.y.range([height, 0]);
-  return this;
-}
-
-View.prototype.width = function(width) {
-  if (!arguments.length) return this._width;
-  this._width = width;
-  this.x.range([0, width]);
-  return this;
-}
-
 module.exports = callable(View);
 
-},{"./callable.js":20,"./util":28,"d3":"oN3yv0"}],"id3":[function(require,module,exports){
-module.exports=require('lCv9Cz');
-},{}],"SpOItP":[function(require,module,exports){
+},{"./callable.js":20,"./layer.js":25,"./util":28,"d3":"+9wJHP"}],"o6W2eo":[function(require,module,exports){
 (function(){//     Underscore.js 1.5.1
 //     http://underscorejs.org
 //     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -17557,5 +17586,9 @@ module.exports=require('lCv9Cz');
 }).call(this);
 
 })()
+},{}],"d3":[function(require,module,exports){
+module.exports=require('+9wJHP');
+},{}],"id3":[function(require,module,exports){
+module.exports=require('Np7oqH');
 },{}]},{},[])
 ;
