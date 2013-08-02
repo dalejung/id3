@@ -72,11 +72,11 @@ var markers = Layer().data({'x': df.gap_up, 'y': df.open})
   .geom(Marker()
     .color('blue')
     .type('circle')
-    .size(13))
+    .size(50))
   .geom(Marker()
     .color('yellow')
     .type('circle')
-    .size(8));
+    .size(30));
 fig.layer(markers, 'gapup');
 
 var circle = svg.append('svg:circle')
