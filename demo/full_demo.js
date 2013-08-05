@@ -38,6 +38,21 @@ fig
 fig(svg);
 
 fig.x.attach(brush);
+// self brushing
+var fbrush = fig.brush();
+fbrush.on('brushend.clear', function() {
+  var domain = fbrush.extent();
+  domain = _.map(domain, Math.round); // brush should always round domain?
+  brush.extent(domain);
+  brush(brush.g)
+  // this should have to be called here
+  // this is another issue with not abstracting shared axis
+  fig.x.change(domain);
+  fig2.x.change(domain);
+  // when self brushing, remove selection after we show it
+  fbrush.clear();
+  fbrush(fbrush.g);
+});
 
 fig.default_layout();
 
@@ -50,7 +65,6 @@ fig2.x.attach(brush);
 fig2_y = fig2.axes_y();
 fig2_y.axis.tickFormat(function(d) { return d/100000 });
 fig2.grid(fig.xaxis);
-
 
 fig.layer(line, 'high');
 fig.layer(candle, 'candle');
@@ -73,18 +87,17 @@ l.layer(fig.layers);
 l(legend);
 $('#legend').draggable({'cursor':'move'});
 
-
 // playing with mouseover stuff for figure
-var vert = svg.append('svg:line')
+/*
+var vert = fig.canvas.append('svg:line')
   .attr('class', 'value')
   .attr('y1', 0)
   .attr('y2', fig.height())
 
+*/
 var format = d3.time.format("%Y-%m-%d");
-svg.on("mousemove", function() { 
+svg.on("mousemove.vert", function() { 
   var x = d3.mouse(this)[0];
-  vert.attr('x1', x);
-  vert.attr('x2', x);
   var d = Math.round(fig.x.scale.invert(x-40));
   var startx = fig.x.domain()[0];
   var text = '';
@@ -101,6 +114,8 @@ svg.on("mousemove", function() {
     text += key + ': '+bit + '<br />';
   }
   d3.select('#data-panel').html(text);
+  //vert.attr('x1', x-40);
+  //vert.attr('x2', x-40);
 });
 $('#data-panel').draggable({'cursor':'move'});
 
@@ -117,3 +132,4 @@ window.onresize = function(){
   clearTimeout(doit);
   doit = setTimeout(updateWindow, 100);
 };
+
