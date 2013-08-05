@@ -8,7 +8,7 @@ var b = browserify();
 var fs = require('fs');
 var Q = require('q');
 var _ = require('underscore');
-b.add('./test_context.js');
+b.add('./full_demo.js');
 
 var deps = b.deps({});
 

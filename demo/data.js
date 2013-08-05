@@ -21,13 +21,14 @@ for (var i=0; i < length; i++) {
 }
 df.gap_up = gap_up;
 
+/*
 _.each(df, function(arr, key) {
   if (!_.isArray(arr)) {
     return;
   }
   df[key] = _.last(arr, 1500);
 });
-
+*/
 
 yvalues = open;
 
