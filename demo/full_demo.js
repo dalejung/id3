@@ -30,7 +30,6 @@ focus
 focus(focus_svg);
 focus.layer(line, 'focus');
 focus.axes_x({orient:'bottom'});
-focus.grid();
 var brush = focus.brush();
 
 fig = Figure();
@@ -76,20 +75,18 @@ $('#legend').draggable({'cursor':'move'});
 
 
 // playing with mouseover stuff for figure
-var circle = svg.append('svg:circle')
+var vert = svg.append('svg:line')
   .attr('class', 'value')
-  .attr('cy', 100)
-  .attr('r', 5);
+  .attr('y1', 0)
+  .attr('y2', fig.height())
 
 var format = d3.time.format("%Y-%m-%d");
 svg.on("mousemove", function() { 
   var x = d3.mouse(this)[0];
-  circle.attr('cx', x);
+  vert.attr('x1', x);
+  vert.attr('x2', x);
   var d = Math.round(fig.x.scale.invert(x-40));
   var startx = fig.x.domain()[0];
-  var el = fig.selection.selectAll('.candlestick')[0][d - startx];
-  d3.selectAll('.candlestick rect').attr('class', '');
-  d3.select(el).select('rect').attr('class', 'blue');
   var text = '';
   for (var key in df) {
     if (!(df[key] instanceof Array)) {
@@ -97,12 +94,15 @@ svg.on("mousemove", function() {
     }
     var bit = df[key][d];
     if (key == 'index') {
-      bit = format(new Date(bit /1000000));
+      // DatetimeIndex wil turn ns -> ms inplace
+      // so the original index array is also changed.
+      bit = format(new Date(bit));
     }
     text += key + ': '+bit + '<br />';
   }
   d3.select('#data-panel').html(text);
 });
+$('#data-panel').draggable({'cursor':'move'});
 
 function updateWindow() {
     var width = window.innerWidth - 60;
