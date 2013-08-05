@@ -3,7 +3,6 @@ var d3 = require('d3');
 var fs = require('dfs');
 var _ = require('underscore');
 var id3 = require('id3');
-require('jquery-browserify');
 var Line = id3.Line;
 var Figure = id3.Figure;
 var Candlestick = id3.Candlestick;
