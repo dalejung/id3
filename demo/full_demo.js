@@ -43,6 +43,12 @@ var fbrush = fig.brush();
 fbrush.on('brushend.clear', function() {
   var domain = fbrush.extent();
   domain = _.map(domain, Math.round); // brush should always round domain?
+  if (domain[1] - domain[0] < 10) {
+    // don't allow brushing less than 10
+    fbrush.clear();
+    fbrush(fbrush.g);
+    return;
+  }
   brush.extent(domain);
   brush(brush.g)
   // this should have to be called here

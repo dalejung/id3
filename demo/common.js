@@ -15899,7 +15899,7 @@ module.exports.DatetimeIndex = function(vals, tz) {
   return new DatetimeIndex(vals, tz) 
 };
 
-},{"./dateoffset.js":28,"moment":44}],25:[function(require,module,exports){
+},{"./dateoffset.js":28,"moment":41}],25:[function(require,module,exports){
 var d3 = require('d3');
 var moment = require('moment');
 var to_offset = require('./dateoffset.js').to_offset;
@@ -15964,7 +15964,7 @@ function best_freq(start_date, end_date, bins) {
 module.exports.time_bins = time_bins;
 module.exports.auto_bins = auto_bins;
 
-},{"./dateindex.js":24,"./dateoffset.js":28,"d3":"+9wJHP","moment":44}],26:[function(require,module,exports){
+},{"./dateindex.js":24,"./dateoffset.js":28,"d3":"+9wJHP","moment":41}],26:[function(require,module,exports){
 var munging = require('./munging.js')
 
 module.exports = munging
@@ -15979,8 +15979,8 @@ function clone(obj) {
 }
 module.exports.clone = clone;
 
-},{"./munging.js":36}],"underscore":[function(require,module,exports){
-module.exports=require('o6W2eo');
+},{"./munging.js":36}],"dfs":[function(require,module,exports){
+module.exports=require('4bng+E');
 },{}],28:[function(require,module,exports){
 var moment = require('moment');
 
@@ -16112,7 +16112,7 @@ function to_offset(freqstr) {
 
 module.exports.to_offset = to_offset;
 
-},{"moment":44}],29:[function(require,module,exports){
+},{"moment":41}],29:[function(require,module,exports){
 var d3 = require('d3');
 var _ = require('underscore');
 
@@ -16939,17 +16939,7 @@ View.prototype.update = function() {
 
 module.exports = callable(View);
 
-},{"./callable.js":20,"./layer.js":31,"./util":26,"d3":"+9wJHP"}],"id3":[function(require,module,exports){
-module.exports=require('Np7oqH');
-},{}],"dfs":[function(require,module,exports){
-module.exports=require('4bng+E');
-},{}],"./data.js":[function(require,module,exports){
-module.exports=require('WNltxV');
-},{}],"d3":[function(require,module,exports){
-module.exports=require('+9wJHP');
-},{}],"jquery-browserify":[function(require,module,exports){
-module.exports=require('h7YhDk');
-},{}],"h7YhDk":[function(require,module,exports){
+},{"./callable.js":20,"./layer.js":31,"./util":26,"d3":"+9wJHP"}],"h7YhDk":[function(require,module,exports){
 (function(){// Uses Node, AMD or browser globals to create a module.
 
 // If you want something that will work in other stricter CommonJS environments,
@@ -26284,7 +26274,11 @@ return jQuery;
 })( window ); }));
 
 })()
-},{}],44:[function(require,module,exports){
+},{}],"http":[function(require,module,exports){
+module.exports=require('Hej6ZR');
+},{}],"id3":[function(require,module,exports){
+module.exports=require('Np7oqH');
+},{}],41:[function(require,module,exports){
 (function(){// moment.js
 // version : 2.1.0
 // author : Tim Wood
@@ -27949,6 +27943,8 @@ return jQuery;
 }).call(this);
 
 })()
+},{}],"underscore":[function(require,module,exports){
+module.exports=require('o6W2eo');
 },{}],"o6W2eo":[function(require,module,exports){
 (function(){//     Underscore.js 1.5.1
 //     http://underscorejs.org
@@ -29198,7 +29194,11 @@ return jQuery;
 }).call(this);
 
 })()
-},{}],"http":[function(require,module,exports){
-module.exports=require('Hej6ZR');
+},{}],"d3":[function(require,module,exports){
+module.exports=require('+9wJHP');
+},{}],"jquery-browserify":[function(require,module,exports){
+module.exports=require('h7YhDk');
+},{}],"./data.js":[function(require,module,exports){
+module.exports=require('WNltxV');
 },{}]},{},[])
 ;
