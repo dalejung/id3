@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+    <script type="text/javascript" src="common.js" inode-keep="true"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js" inode-keep="true"></script>
+    <script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js" inode-keep="true"></script>
+    <style>
+      #chart {
+        margin:20px;
+        width: 1000px;
+      }
+      path {
+        stroke: steelblue;
+        stroke-width: 1px;
+      }
+
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+    .brush .extent {
+      stroke: #fff;
+      fill-opacity: .125;
+      shape-rendering: crispEdges;
+    }
+    .grid .tick {
+        stroke: lightgrey;
+        opacity: 0.7;
+      }
+      .blue {
+        fill: "blue";
+      }
+      #data-panel {
+        position: absolute;
+        left:1240px;
+        top:140px;
+        border: 1px solid black;
+        min-width: 200px;
+        min-height:200px;
+      }
+      #legend {
+        background-color:white;
+        position: absolute;
+        top: 50px;
+        right:50px;
+        width: 175px;
+      }
+      #main path.line-plot {
+          stroke-width: 2px;
+      }
+      #main .marker-plot path {
+          stroke: #000
+      }
+    </style>
+</head>
+<body>
+
+    <div id="charts"></div>
+  <svg id="focus"></svg>
+  <svg id="legend"></svg>
+
+    <script type="text/javascript" src="lab_demo.js" inode-keep="true"></script>
+</body>
+</html>
+
