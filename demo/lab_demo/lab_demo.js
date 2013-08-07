@@ -102,6 +102,7 @@ function updateWindow() {
     figs.forEach(function(f) { f.width(width).height(height); })
     focus.width(width);
     // hack to get grids to redraw and use updated tickValues
+    figs.forEach(function(f) { f.x.change(f.x.domain()); })
     focus.x.change(focus.x.domain()); 
 }
 
